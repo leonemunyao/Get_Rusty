@@ -89,6 +89,37 @@ fn get_message(id: u64) -> Result<Message, Error> {
     }
 }
 
+// _get_message is a helper. It accepsts an id as a reference and returns an `Option<Message>`
+// Retrieves the message from the canister storage using the STORAGE thread local varibale.
+
 fn _get_message(id: &u64) -> Option<Message> {
     STORAGE.with(|s| s.borrow().get(id))
 }
+
+
+//  add_message Function. Adding a new message to the canister storage.
+
+#[ic_icd::update]
+fn add_message(message: MessagePayload) -> Option<Message> {
+    let id = ID_COUNTER
+        .with(|counter| {
+            let current_value = *counter.borrow().get();
+            counter.borrow_mut().set(current_value + 1)
+        })
+        .expect("cannot increment id counter");                             // add_message function takes a message of the type MessagePayload as input and returns an Option<Message>
+    let message = Message {
+        id,
+        title: message.title,
+        body: message.body,
+        attachment_url: message.attachment_url,
+        created_at: time(),
+        updated_at: None,
+    };
+    do_insert(&message);
+    Some(message)
+}
+
+
+// 
+
+
