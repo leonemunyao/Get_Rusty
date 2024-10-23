@@ -120,6 +120,61 @@ fn add_message(message: MessagePayload) -> Option<Message> {
 }
 
 
-// 
+// do_insert message is a helper function used inside the add_message function.
+// helper method to perfom insert.
 
+fn do_insert(message: &Message) {
+    STORAGE.with(|service| service.borrow_mut().insert(message.id, message.clone()));
+}
+
+//  update_message function
+
+#[ic_cdk::update]
+fn update_message(id: u64, payload: MessagePayload) -> Result<Message, Error> {
+    match STORAGE.with(|service| service.borrow().get(&id)) {
+        Some(mut message) => {
+            message.attachment_url = payload.attachment_url;
+            message.body = payload.body;
+            message.title = payload.title;
+            message.updated_at = Some(time());
+            do_insert(&message);
+            Ok(message)
+        }
+        None => Err(Error::NotFound {
+            msg: format!(
+                "couldn't update a message with id={}. message not found",
+                id
+            ),
+        }),
+    }
+}
+
+
+// delete_message function. For deleting our canister storage.
+
+#[ic_cdk::update]
+fn delete_message(id: u64) -> Result<Message, Error> {
+    match STORAGE.with(|service| service.borrow_mut().remove(&id)) {
+        Some(message) => Ok(message),
+        None => Err(Error::NotFound) {
+            msg: format!(
+                "Couldn't delete a message with id={}. message not found."
+                id
+            ),
+        },
+    }
+}
+
+// enum Error
+// This is an Error used to represent errors that may occur when interacting with the canister.
+
+#[derive(CandidType, Deserialize, Serialize)]
+enum Error {
+    NotFound {msg: String};
+}
+
+
+// Generate the candid interface definitions for our canister.
+
+ic_cdk::export_candid();
 
