@@ -1,10 +1,11 @@
 #[macro_use]
-extern create serde;
+extern crate serde;
 use candid::{Decode, Encode};   // Serialization format to define the internet canisters
+use candid::CandidType;
 use ic_cdk::api::time;       //Provide method to allow rust programs to interact with the Internet Computer blockchain API.
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};    //library that offers a set of data structures that remain stable across upgrades.
-use ic_stable_structures::{BoundedStorable, Cell, DefaultMemoryImpl, StableTreeMap, Storable};
-use std::{borrow::Cow, cell::Refcell};
+use ic_stable_structures::{BoundedStorable, Cell, DefaultMemoryImpl, StableBTreeMap, Storable};
+use std::{borrow::Cow, cell::RefCell};
 
 
 // Defining Memory and ID Cell
@@ -15,7 +16,7 @@ type IdCell = Cell<u64, Memory>;  // IdCell responds for holding the current ID 
 
 // Defining Message Struct
 
-#[derive(candid::CandidType, Close, Serialize, Deserialize, Default)]
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Default)]
 struct Message {
     id: u64,
     title: String,
@@ -28,11 +29,11 @@ struct Message {
 //Implementing Storable and BoundedStorable
 
 impl Storable for Message {
-    fn to_bytes($self) -> std::borrow::Cow<[u8]> {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
         Cow::Owned(Encode!(self).unwrap())
     }
 
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> self {
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 }
@@ -48,7 +49,7 @@ impl BoundedStorable for Message {
 
 
 thread_local! {
-    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = Refcell::new(
+    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
         MemoryManager::init(DefaultMemoryImpl::default())
     );
 
@@ -57,8 +58,8 @@ thread_local! {
             .expect("Cannot create a counter")
     );
 
-    static STORAGE: RefCell<StableTreeMap<u64, Message, Memory>> =
-        RefCell:: new(StableTreeMap::init(
+    static STORAGE: RefCell<StableBTreeMap<u64, Message, Memory>> =
+        RefCell:: new(StableBTreeMap::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1)))
         ));
 }
@@ -99,7 +100,7 @@ fn _get_message(id: &u64) -> Option<Message> {
 
 //  add_message Function. Adding a new message to the canister storage.
 
-#[ic_icd::update]
+#[ic_cdk::update]
 fn add_message(message: MessagePayload) -> Option<Message> {
     let id = ID_COUNTER
         .with(|counter| {
@@ -156,12 +157,12 @@ fn update_message(id: u64, payload: MessagePayload) -> Result<Message, Error> {
 fn delete_message(id: u64) -> Result<Message, Error> {
     match STORAGE.with(|service| service.borrow_mut().remove(&id)) {
         Some(message) => Ok(message),
-        None => Err(Error::NotFound) {
+        None => Err(Error::NotFound {
             msg: format!(
-                "Couldn't delete a message with id={}. message not found."
+                "Couldn't delete a message with id={}. message not found.",
                 id
             ),
-        },
+        }),
     }
 }
 
@@ -170,11 +171,11 @@ fn delete_message(id: u64) -> Result<Message, Error> {
 
 #[derive(CandidType, Deserialize, Serialize)]
 enum Error {
-    NotFound {msg: String};
+    NotFound {msg: String},
 }
 
 
 // Generate the candid interface definitions for our canister.
 
-ic_cdk::export_candid();
+ic_cdk::export_candid!();
 
