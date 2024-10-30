@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "canisters": {
+    "livestock_management_backend": {
+      "type": "rust",
+      "package": "livestock_management_backend",
+      "candid": "src/livestock_management_backend/livestock_management_backend.did"
+    }
+  },
+  "output_env_file": ".env"
+}

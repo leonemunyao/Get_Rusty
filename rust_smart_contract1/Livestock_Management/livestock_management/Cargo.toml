@@ -1,0 +1,4 @@
+[workspace]
+members = [
+    "src/livestock_management_backend",
+]
