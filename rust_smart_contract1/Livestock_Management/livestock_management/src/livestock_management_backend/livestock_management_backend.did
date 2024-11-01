@@ -1,1 +1,13 @@
-service : () -> { create_animal : (nat8, text, float32, text) -> (nat64) }
+type Livestock = record {
+  id : nat64;
+  age : nat8;
+  height : float32;
+  updated_at : opt nat64;
+  healthrecords : text;
+  created_at : nat64;
+  breed : text;
+};
+service : () -> {
+  create_animal : (nat8, text, float32, text) -> (nat64);
+  get_animal : (nat64) -> (opt Livestock) query;
+}

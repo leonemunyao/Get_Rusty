@@ -82,20 +82,24 @@ fn init() {
 
 #[ic_cdk_macros::update]
 fn create_animal(age: u8, breed: String, height: f32, healthrecords: String) -> u64 {
+    ic_cdk::println!("Creating animal with age: {}, breed: {}, height: {}, healthrecords: {}", age, breed, height, healthrecords);
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
-        system.create_animal(age, breed, height, healthrecords)
+        let id = system.create_animal(age, breed, height, healthrecords);
+        ic_cdk::println!("Animal created with ID: {}", id);
+        id
     }
 }
 
 // Read function to get the animal details
-[ic_cdk_macros::query]
+#[ic_cdk_macros::query]
 fn get_animal(id: u64) -> Option<Livestock> {
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
         system.animal.get(&(id as u32)).cloned()
     }
 }
+
 
 
 
