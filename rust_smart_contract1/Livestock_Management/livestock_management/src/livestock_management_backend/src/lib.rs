@@ -15,6 +15,7 @@ use std::collections::HashMap;
 
 // Define the livestock struct 
 #[derive(candid::CandidType, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug)]
 struct Livestock {
     id: u64,
     breed: String,
@@ -74,6 +75,7 @@ static mut LIVECTOCK_SYSTEM: Option<LivestockManagementSystem> = None;
 // Initialize the canister state
 #[ic_cdk_macros::init]
 fn init() {
+    ic_cdk::println!("Initializing Livestock Management System...");
     unsafe {
         LIVECTOCK_SYSTEM = Some(LivestockManagementSystem::new());
     }
@@ -86,17 +88,27 @@ fn create_animal(age: u8, breed: String, height: f32, healthrecords: String) -> 
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
         let id = system.create_animal(age, breed, height, healthrecords);
-        ic_cdk::println!("Animal created with ID: {}", id);
+        ic_cdk::println!("Animal created with ID: {}", id); 
         id
     }
 }
 
-// Read function to get the animal details
+// Read function to get the animal details by ID
 #[ic_cdk_macros::query]
 fn get_animal(id: u64) -> Option<Livestock> {
+    ic_cdk::println!("Getting animal with ID: {}", id);
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
-        system.animal.get(&(id as u32)).cloned()
+        match system.animal.get(&(id as u32)) {
+            Some(animal) => {
+                ic_cdk::println!("Animal found: {:?}", animal);
+                Some(animal.clone())
+            }
+            None => {
+                ic_cdk::println!("No animal found with ID: {}", id);
+                None
+            }
+        }
     }
 }
 
