@@ -78,6 +78,7 @@ fn init() {
     ic_cdk::println!("Initializing Livestock Management System...");
     unsafe {
         LIVECTOCK_SYSTEM = Some(LivestockManagementSystem::new());
+        ic_cdk::println!("Livestock Management System Initialized.");
     }
 }
 
@@ -107,6 +108,50 @@ fn get_animal(id: u64) -> Option<Livestock> {
             None => {
                 ic_cdk::println!("No animal found with ID: {}", id);
                 None
+            }
+        }
+    }
+}
+
+
+// Update function to update the animal details by ID
+#[ic_cdk_macros::update]
+fn update_animal(id: u64, age: u8, breed: String, height: f32, healthrecords: String) -> bool {
+    ic_cdk::println!("Updating animal with ID: {}", id);
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
+        match system.animal.get_mut(&(id as u32)) {
+            Some(animal) => {
+                animal.age = age;
+                animal.breed = breed;
+                animal.height = height;
+                animal.healthrecords = healthrecords;
+                animal.updated_at = Some(0);
+                ic_cdk::println!("Animal updated: {:?}", animal);
+                true
+            }
+            None => {
+                ic_cdk::println!("No animal found with ID: {}", id);
+                false
+            }
+        }
+    }
+}
+
+// Delete function to delete the animal by ID
+#[ic_cdk_macros::update]
+fn delete_animal(id: u64) -> bool {
+    ic_cdk::println!("Deleting animal with ID: {}", id);
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
+        match system.animal.remove(&(id as u32)) {
+            Some(_) => {
+                ic_cdk::println!("Animal deleted with ID: {}", id);
+                true
+            }
+            None => {
+                ic_cdk::println!("No animal found with ID: {}", id);
+                false
             }
         }
     }

@@ -9,5 +9,7 @@ type Livestock = record {
 };
 service : () -> {
   create_animal : (nat8, text, float32, text) -> (nat64);
+  delete_animal : (nat64) -> (bool);
   get_animal : (nat64) -> (opt Livestock) query;
+  update_animal : (nat64, nat8, text, float32, text) -> (bool);
 }
