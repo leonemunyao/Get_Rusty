@@ -136,6 +136,14 @@ pub fn update_crop_details(
     })
 }
 
+// Delete the crop details by ID
+#[update]
+pub fn delete_crop(id: u64) -> Option<Crop> {
+    CROPS.with(|crops| {
+        crops.borrow_mut().remove(&id)
+    })
+}
+
 // Export the candid functions
 
 ic_cdk::export_candid!(); 

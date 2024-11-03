@@ -29,6 +29,7 @@ service : {
       float64,
       float64,
     ) -> (Crop);
+  delete_crop : (nat64) -> (opt Crop);
   get_crop_details : (nat64) -> (opt Crop) query;
   update_crop_details : (
       nat64,
