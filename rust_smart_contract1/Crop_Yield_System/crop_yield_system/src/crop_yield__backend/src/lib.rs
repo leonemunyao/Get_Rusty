@@ -93,3 +93,8 @@ fn main() {
     let new_crop = create_crop();
     println!("{:#?}", new_crop);
 }
+
+
+// Export the candid functions
+
+ic_cdk::export_candid!(); 
