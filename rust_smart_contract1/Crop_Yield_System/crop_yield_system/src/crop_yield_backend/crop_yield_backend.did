@@ -29,4 +29,5 @@ service : {
       float64,
       float64,
     ) -> (Crop);
+  get_crop_details : (Crop) -> (Crop);
 }

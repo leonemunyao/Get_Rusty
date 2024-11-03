@@ -91,41 +91,13 @@ pub fn create_crop(
     )
 }
 
-// Function to display the crop details
-// pub fn main() {
-//     // Placeholder values for the crop details
-//     let id = 1;
-//     let crop_type = String::new();
-//     let variety = String::new();
-//     let field_location = String::new();
-//     let planting_date = String::new();
-//     let weather_conditions = String::new();
-//     let expected_yield = 0.0;
-//     let actual_yield = 0.0;
-//     let infection_monitoring = HashMap::new();
-//     let pest_and_disease_details = HashMap::new();
-//     let soil_quality = HashMap::new();
-//     let ph_level = 0.0;
-//     let expected_rainfall = 0.0;
+// Get the crop details
+#[update]
+pub fn get_crop_details(crop: Crop) -> Crop {
+    crop
+}
 
-//     let new_crop = create_crop(
-//         id,
-//         crop_type,
-//         variety,
-//         field_location,
-//         planting_date,
-//         weather_conditions,
-//         expected_yield,
-//         actual_yield,
-//         infection_monitoring,
-//         pest_and_disease_details,
-//         soil_quality,
-//         ph_level,
-//         expected_rainfall
-//     );
-//     println!("{:#?}", new_crop);
-// }
-
+// Update the crop details
 
 // Export the candid functions
 
