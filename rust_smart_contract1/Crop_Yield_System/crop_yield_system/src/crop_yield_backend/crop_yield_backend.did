@@ -29,5 +29,14 @@ service : {
       float64,
       float64,
     ) -> (Crop);
-  get_crop_details : (Crop) -> (Crop);
+  get_crop_details : (nat64) -> (opt Crop) query;
+  update_crop_details : (
+      nat64,
+      float64,
+      vec record { text; text },
+      vec record { text; text },
+      vec record { text; text },
+      float64,
+      float64,
+    ) -> (opt Crop);
 }

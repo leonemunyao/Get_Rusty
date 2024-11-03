@@ -2,10 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 use candid::CandidType;
-use ic_cdk_macros::update;
+use ic_cdk_macros::{update, query};
 use std::collections::HashMap;
+use std::cell::RefCell;
 
-#[derive(CandidType, Serialize, Deserialize, Debug)]  // Add Serialize and Deserialize traits
+#[derive(CandidType, Serialize, Deserialize, Debug, Clone)]  // Add Serialize and Deserialize traits
 pub struct Crop {
     id: u64,
     crop_type: String,
@@ -57,6 +58,11 @@ impl Crop {
     }
 }
 
+// Global variable to store the crop details
+thread_local! {
+    static CROPS: RefCell<HashMap<u64, Crop>> = RefCell::new(HashMap::new());
+}
+
 // Create a new Crop instance
 #[update]
 pub fn create_crop(
@@ -74,7 +80,7 @@ pub fn create_crop(
     ph_level: f64,
     expected_rainfall: f64,
 ) -> Crop {
-    Crop::new(
+    let crop = Crop::new(
         id,
         crop_type,
         variety,
@@ -88,16 +94,47 @@ pub fn create_crop(
         soil_quality,
         ph_level,
         expected_rainfall,
-    )
-}
-
-// Get the crop details
-#[update]
-pub fn get_crop_details(crop: Crop) -> Crop {
+    );
+    CROPS.with(|crops|{
+        crops.borrow_mut().insert(id, crop.clone());
+    });
     crop
 }
 
+// Get the crop details by ID
+#[query]
+pub fn get_crop_details(id: u64) -> Option<Crop> {
+    CROPS.with(|crops| {
+        crops.borrow().get(&id).cloned()
+    })
+}
+
 // Update the crop details
+#[update]
+pub fn update_crop_details(
+    crop_id: u64,
+    actual_yield: f64,
+    infection_monitoring: HashMap<String, String>,
+    pest_and_disease_details: HashMap<String, String>,
+    soil_quality: HashMap<String, String>,
+    ph_level: f64,
+    expected_rainfall: f64,
+) -> Option<Crop> {
+    CROPS.with(|crops| {
+        let mut crops = crops.borrow_mut();
+        if let Some(crop) = crops.get_mut(&crop_id) {
+            crop.actual_yield = actual_yield;
+            crop.infection_monitoring = infection_monitoring;
+            crop.pest_and_disease_details = pest_and_disease_details;
+            crop.soil_quality = soil_quality;
+            crop.ph_level = ph_level;
+            crop.expected_rainfall = expected_rainfall;
+            Some(crop.clone())
+        } else {
+            None
+        }
+    })
+}
 
 // Export the candid functions
 
