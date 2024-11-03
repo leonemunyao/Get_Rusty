@@ -2,10 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use ic_cdk::api;
 
 #[derive(Serialize, Deserialize, Debug)]  // Add Serialize and Deserialize traits
-struct Crop {
+pub struct Crop {
     id: u64,
     crop_type: String,
     variety: String,
@@ -23,7 +22,7 @@ struct Crop {
 
 // Implement the Crop struct
 impl Crop {
-    fn new(
+    pub fn new(
         id: u64,
         crop_type: String,
         variety: String,
@@ -57,7 +56,7 @@ impl Crop {
 }
 
 // Create a new Crop instance
-fn create_crop(
+pub fn create_crop(
     id: u64,
     crop_type: String,
     variety: String,
@@ -90,7 +89,7 @@ fn create_crop(
 }
 
 // Function to display the crop details
-fn main() {
+pub fn main() {
     // Placeholder values for the crop details
     let id = 1;
     let crop_type = String::new();
@@ -105,7 +104,7 @@ fn main() {
     let soil_quality = HashMap::new();
     let ph_level = 0.0;
     let expected_rainfall = 0.0;
-    
+
     let new_crop = create_crop(
         id,
         crop_type,
