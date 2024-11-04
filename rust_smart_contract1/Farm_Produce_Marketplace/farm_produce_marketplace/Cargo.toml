@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "src/farm_produce_backend",
+]

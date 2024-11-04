@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "canisters": {
+    "farm_produce_backend": {
+      "type": "rust",
+      "package": "farm_produce_backend",
+      "candid": "src/farm_produce_backend/farm_produce_backend.did"
+    }
+  },
+  "output_env_file": ".env"
+}
