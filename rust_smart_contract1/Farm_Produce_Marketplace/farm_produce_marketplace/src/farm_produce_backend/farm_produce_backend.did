@@ -9,5 +9,5 @@ type Product = record {
 service : () -> {
   create_product : (text, text, nat64, nat) -> ();
   get_products : (text) -> (vec Product) query;
-  update_product_quantity : (nat64, nat64) -> ();
+  update_product : (nat64, nat64, text, nat) -> ();
 }

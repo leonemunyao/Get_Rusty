@@ -65,17 +65,25 @@ pub fn get_products(name: String) -> Vec<Product> {
 // Update function to update the quantity, description and price of a product.
 // Sellers will have the ability to update the quantity, description and price of a product they have listed.
 #[update]
-pub fn update_product(id: u64, quantity: u64, description: String, price: u128) {
+pub fn update_product(id: u64, description: String, quantity: u64, price: u128) {
     let (mut marketplace,): (Marketplace,) = ic_cdk::storage::stable_restore().unwrap();
     let product = marketplace.products.iter_mut().find(|product| product.id == id);
     if let Some(product) = product {
-        product.quantity = quantity;
         product.description = description;
+        product.quantity = quantity;
         product.price = price;
     }
     ic_cdk::storage::stable_save((marketplace,)).unwrap();
 }
 
+// Delete function to delete a product by name.
+// Sellers will have the ability to delete a product they have listed.
+#[update]
+pub fn delete_product(id: u64) {
+    let (mut marketplace,): (Marketplace,) = ic_cdk::storage::stable_restore().unwrap();
+    marketplace.products.retain(|product| product.id != id);
+    ic_cdk::storage::stable_save((marketplace,)).unwrap();
+}
 
 // Export the contract
 ic_cdk::export_candid!();
