@@ -85,5 +85,12 @@ pub fn delete_product(id: u64) {
     ic_cdk::storage::stable_save((marketplace,)).unwrap();
 }
 
+// A function to get all products. Retrieves and displays all the products available in the marketplace.
+#[query]
+pub fn get_all_products() -> Vec<Product> {
+    let (marketplace,): (Marketplace,) = ic_cdk::storage::stable_restore().unwrap();
+    marketplace.products
+}
+
 // Export the contract
 ic_cdk::export_candid!();

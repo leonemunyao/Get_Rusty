@@ -8,6 +8,8 @@ type Product = record {
 };
 service : () -> {
   create_product : (text, text, nat64, nat) -> ();
+  delete_product : (nat64) -> ();
+  get_all_products : () -> (vec Product) query;
   get_products : (text) -> (vec Product) query;
-  update_product : (nat64, nat64, text, nat) -> ();
+  update_product : (nat64, text, nat64, nat) -> ();
 }
