@@ -9,13 +9,13 @@ use ic_cdk_macros::{init, update};
 
 
 // Define the contract struct
-#[derive(CandidType, Deserialize, Serialize, Clone)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Marketplace {
     products: Vec<Product>,
 }
 
 // Define the Product struct
-#[derive(CandidType, Deserialize, Serialize, Clone)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Product {
     id: u64,
     name: String,
@@ -48,11 +48,19 @@ pub fn create_product(name: String, description: String, quantity: u64, price: u
 
 // Read function to get all products. Buyers will have the ability to view available products including their current prices and quantities.
 // Read function gets the products by name.
+
 #[query]
 pub fn get_products(name: String) -> Vec<Product> {
     let (marketplace,): (Marketplace,) = ic_cdk::storage::stable_restore().unwrap();
-    marketplace.products.into_iter().filter(|product| product.name == name).collect()
+    let name = name.trim();
+    let filtered_products: Vec<Product> = marketplace.products
+        .into_iter()
+        .filter(|product| product.name.trim() == name)
+        .collect();
+    ic_cdk::println!("Filtered products: {:?}", filtered_products);
+    filtered_products
 }
+
 
 // Export the contract
 ic_cdk::export_candid!();
