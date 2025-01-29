@@ -2,15 +2,8 @@
 extern crate serde;
 extern crate ic_cdk_macros;
 extern crate ic_cdk;
-//use candid::{Decode, Encode};
-//use ic_cdk::api::time; 
-// use ic_stable_structures::memory_manager::{VirtualMemory};
+use ic_cdk::api::time;
 use std::collections::HashMap;
-// use ic_stable_structures::{Cell, DefaultMemoryImpl};
-//use std::{cell::RefCell};
-
-// type Memory<DefaultMemoryImpl> = VirtualMemory<DefaultMemoryImpl>;
-// type IdCell = Cell<u64, Memory<DefaultMemoryImpl>>;
 
 
 // Define the livestock struct 
@@ -45,6 +38,7 @@ impl LivestockManagementSystem {
     // create_animal function
     fn create_animal(&mut self, age: u8, breed: String, height: f32, healthrecords: String) -> u64 {
 
+        let current_time = time();
 
         // create new animal with unique ID
         let animal = Livestock {
@@ -53,7 +47,7 @@ impl LivestockManagementSystem {
             breed,
             height,
             healthrecords,
-            created_at: 0,
+            created_at: current_time,
             updated_at: None,
         };
 
@@ -166,3 +160,4 @@ fn delete_animal(id: u64) -> bool {
 ic_cdk::export_candid!(); 
 
 
+        
