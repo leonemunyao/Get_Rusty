@@ -2,14 +2,34 @@ type Livestock = record {
   id : nat64;
   age : nat8;
   height : float32;
-  updated_at : opt nat64;
   healthrecords : text;
+  healthstatus: HealthStatus;
+  medidical_records : vec Medication;
+  updated_at : opt nat64;
   created_at : nat64;
   breed : text;
 };
+
+type HealthStatus = variant {
+  Healthy;
+  Sick;
+  Critical;
+};
+
+type Medication = record {
+  id : nat64;
+  name : text;
+  dosage : text;
+  start_date : nat64;
+  end_date : nat64;
+};
+
 service : () -> {
-  create_animal : (nat8, text, float32, text) -> (nat64);
+  create_animal : (nat8, text, float32) -> (nat64);
   delete_animal : (nat64) -> (bool);
   get_animal : (nat64) -> (opt Livestock) query;
   update_animal : (nat64, nat8, text, float32, text) -> (bool);
+  track_medication : (nat64, text, text) -> (bool);
+  get_health_alerts : () -> (vec Livestock) query;
+  update_health_status : (nat64, text) -> (bool);
 }
