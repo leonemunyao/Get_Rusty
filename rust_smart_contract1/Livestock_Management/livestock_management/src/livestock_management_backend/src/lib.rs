@@ -16,8 +16,19 @@ struct Livestock {
     height: f32,
     healthrecords: String,
     healthstatus: HealthStatus,
+    medical_records: Vec<Medication>,
     created_at: u64,
     updated_at: Option<u64>,
+}
+
+// Vacination and medication trucking
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Debug)]
+struct Medication {
+    id: u64,
+    name: String,
+    dosage: String,
+    start_date: u64,
+    end_date: u64,
 }
 
 // Health alert struct
@@ -69,6 +80,7 @@ impl LivestockManagementSystem {
             height,
             healthrecords: "Healthy".to_string(),
             healthstatus: HealthStatus::Healthy,
+            medical_records: Vec::new(),
             created_at: current_time,
             updated_at: None,
         };
@@ -100,8 +112,8 @@ fn init() {
 
 
 #[ic_cdk_macros::update]
-fn create_animal(age: u8, breed: String, height: f32, healthrecords: String) -> u64 {
-    ic_cdk::println!("Creating animal with age: {}, breed: {}, height: {}, healthrecords: {}", age, breed, height, healthrecords);
+fn create_animal(age: u8, breed: String, height: f32) -> u64 {
+    ic_cdk::println!("Creating animal with age: {}, breed: {}, height: {}", age, breed, height);
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
         let id = system.create_animal(age, breed, height);
@@ -185,6 +197,29 @@ fn get_health_alerts() -> Vec<HealthAlert> {
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
         system.health_alerts.clone()
+    }
+}
+
+// Medication tracking function
+#[ic_cdk_macros::update]
+fn track_medication(animal_id: u64, medication_name: String, dosage: String) -> bool {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
+        if let Some(animal) = system.animal.get_mut(&(animal_id as u32)) {
+            let medication = Medication {
+                id: animal.medical_records.len() as u64 + 1,
+                name: medication_name,
+                dosage,
+                start_date: time(),
+                end_date: time() + 86400, // 1 day
+            };
+            animal.medical_records.push(medication);
+            ic_cdk::println!("Medication tracked for animal with ID: {}", animal_id);
+            true
+        } else {
+            false
+            
+        }
     }
 }
 
