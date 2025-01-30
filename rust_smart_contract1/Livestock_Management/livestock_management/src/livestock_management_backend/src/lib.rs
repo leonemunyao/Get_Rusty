@@ -15,8 +15,27 @@ struct Livestock {
     age: u8,
     height: f32,
     healthrecords: String,
+    healthstatus: HealthStatus,
     created_at: u64,
     updated_at: Option<u64>,
+}
+
+// Health alert struct
+#[derive(candid::CandidType, Clone, Serialize, Deserialize)]
+struct HealthAlert {
+    animal_id: u64,
+    status: HealthStatus,
+    timestamp: u64,
+}
+
+// Health status struct of the animal
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Copy, Default)]
+#[derive(Debug)]
+enum HealthStatus {
+    #[default]  // Default status is Healthy
+    Healthy,
+    Sick,
+    Critical,
 }
 
 
@@ -24,6 +43,7 @@ struct Livestock {
 struct LivestockManagementSystem {
     animal: HashMap<u32, Livestock>,   // Strores animals by their id
     next_id: u64,   // This is a counter to generate unique IDs
+    health_alerts: Vec<HealthAlert>,  // Stores health alerts
 }
 
 
@@ -33,10 +53,11 @@ impl LivestockManagementSystem {
     fn new() -> Self { LivestockManagementSystem {
         animal: HashMap::new(),
         next_id: 1,
+        health_alerts: Vec::new(),
     }}
 
     // create_animal function
-    fn create_animal(&mut self, age: u8, breed: String, height: f32, healthrecords: String) -> u64 {
+    fn create_animal(&mut self, age: u8, breed: String, height: f32) -> u64 {
 
         let current_time = time();
 
@@ -46,7 +67,8 @@ impl LivestockManagementSystem {
             age,
             breed,
             height,
-            healthrecords,
+            healthrecords: "Healthy".to_string(),
+            healthstatus: HealthStatus::Healthy,
             created_at: current_time,
             updated_at: None,
         };
@@ -82,7 +104,7 @@ fn create_animal(age: u8, breed: String, height: f32, healthrecords: String) -> 
     ic_cdk::println!("Creating animal with age: {}, breed: {}, height: {}, healthrecords: {}", age, breed, height, healthrecords);
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
-        let id = system.create_animal(age, breed, height, healthrecords);
+        let id = system.create_animal(age, breed, height);
         ic_cdk::println!("Animal created with ID: {}", id); 
         id
     }
@@ -132,6 +154,40 @@ fn update_animal(id: u64, age: u8, breed: String, height: f32, healthrecords: St
     }
 }
 
+
+// Function to update the animal health status
+#[ic_cdk_macros::update]
+fn update_health_status(id: u64, new_status: HealthStatus) -> bool {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
+        if let Some(animal) = system.animal.get_mut(&(id as u32)) {
+            animal.healthstatus = new_status;
+            if matches!(new_status, HealthStatus::Critical | HealthStatus::Sick) {
+                let alert = HealthAlert {
+                    animal_id: id,
+                    status: new_status,
+                    timestamp: time(),
+                };
+                system.health_alerts.push(alert);
+                ic_cdk::println!("ALERT: Animal with ID: {} is now {:?}", id, new_status);
+            }
+            true
+        } else {
+            false
+        }
+    }
+}
+
+
+// Function to get the health alerts
+#[ic_cdk_macros::query]
+fn get_health_alerts() -> Vec<HealthAlert> {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.health_alerts.clone()
+    }
+}
+
 // Delete function to delete the animal by ID
 #[ic_cdk_macros::update]
 fn delete_animal(id: u64) -> bool {
@@ -153,11 +209,8 @@ fn delete_animal(id: u64) -> bool {
 
 
 
-
-
 // Export the candid functions
 
 ic_cdk::export_candid!(); 
 
 
-        
