@@ -47,9 +47,18 @@ struct HealthAlert {
     timestamp: u64,
 }
 
+// Event logging struct
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Debug)]
+struct EventLog {
+    event_type: String,
+    details: String,
+    timestamp: u64,
+}
+
 // Health status struct of the animal
 #[derive(candid::CandidType, Clone, Serialize, Deserialize, Copy, Default)]
 #[derive(Debug)]
+#[derive(PartialEq)]
 enum HealthStatus {
     #[default]  // Default status is Healthy
     Healthy,
@@ -64,6 +73,7 @@ struct LivestockManagementSystem {
     animal: HashMap<u32, Livestock>,   // Strores animals by their id
     next_id: u64,   // This is a counter to generate unique IDs
     health_alerts: Vec<HealthAlert>,  // Stores health alerts
+    event_logs: Vec<EventLog>,  // Stores event logs
 }
 
 
@@ -74,12 +84,14 @@ impl LivestockManagementSystem {
         animal: HashMap::new(),
         next_id: 1,
         health_alerts: Vec::new(),
+        event_logs: Vec::new(),
     }}
 
     // create_animal function
     fn create_animal(&mut self, age: u8, breed: String, height: f32) -> u64 {
 
         let current_time = time();
+        let breed_clone = breed.clone();
 
         // create new animal with unique ID
         let animal = Livestock {
@@ -98,6 +110,13 @@ impl LivestockManagementSystem {
         // Insert animal into the HashMap
         self.animal.insert(self.next_id.try_into().unwrap(), animal);
 
+        // log the event
+        self.event_logs.push(EventLog {
+            event_type: "Animal Created".to_string(),
+            details: format!("Animal with ID: {}, Breed: {}, Age: {}, Height: {} created.", self.next_id, breed_clone, age, height),
+            timestamp: current_time,
+        });
+
         // Increment ID to the next animal
         self.next_id += 1;
 
@@ -110,6 +129,7 @@ impl LivestockManagementSystem {
 
         // check if both parents exist
         if self.animal.contains_key(&(parent1_id as u32)) && self.animal.contains_key(&(parent2_id as u32)) {
+            let breed_clone = breed.clone();
 
             // Create a new offspring
             let offspring_id = self.create_animal(0, breed, 0.0);
@@ -121,6 +141,13 @@ impl LivestockManagementSystem {
                     parent2_id,
                 });
             }
+
+            // log the event
+            self.event_logs.push(EventLog {
+                event_type: "Animal Bred".to_string(),
+                details: format!("Animal with ID: {} and ID: {} bred to create a new animal with ID: {} and breed: {}", parent1_id, parent2_id, offspring_id, breed_clone),
+                timestamp: time(),
+            });
 
             Some(offspring_id)
         } else {
@@ -206,6 +233,15 @@ fn get_animal(id: u64) -> Option<Livestock> {
     }
 }
 
+// Get all animals function to get all the animals in the system
+#[ic_cdk_macros::query]
+fn get_all_animals() -> Vec<Livestock> {
+    ic_cdk::println!("Getting all animals...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.animal.values().cloned().collect()
+    }
+}
 
 // Update function to update the animal details by ID
 #[ic_cdk_macros::update]
@@ -215,11 +251,20 @@ fn update_animal(id: u64, age: u8, breed: String, height: f32, healthrecords: St
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
         match system.animal.get_mut(&(id as u32)) {
             Some(animal) => {
+                let breed_clone = breed.clone();
                 animal.age = age;
                 animal.breed = breed;
                 animal.height = height;
                 animal.healthrecords = healthrecords;
                 animal.updated_at = Some(0);
+
+                // log the event
+                system.event_logs.push(EventLog {
+                    event_type: "Animal Updated".to_string(),
+                    details: format!("Animal with ID: {}, Breed: {}, Age: {}, Height: {} updated.", id, breed_clone, age, height),
+                    timestamp: time(),
+                });
+
                 ic_cdk::println!("Animal updated: {:?}", animal);
                 true
             }
@@ -309,7 +354,44 @@ fn track_medication(animal_id: u64, medication_name: String, dosage: String) -> 
     }
 }
 
-//
+// A function to retrieve all the animals whose Heals status is Critical
+#[ic_cdk_macros::query]
+fn get_critical_animals() -> Vec<Livestock> {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.animal.values().filter(|animal| animal.healthstatus == HealthStatus::Critical).cloned().collect()
+    }
+}
+
+// A function to retrieve all the animals whose Heals status is Sick
+#[ic_cdk_macros::query]
+fn get_sick_animals() -> Vec<Livestock> {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.animal.values().filter(|animal| animal.healthstatus == HealthStatus::Sick).cloned().collect()
+    }
+}
+
+// A function to retrieve all the animals whose Heals status is Recovering
+#[ic_cdk_macros::query]
+fn get_recovering_animals() -> Vec<Livestock> {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.animal.values().filter(|animal| animal.healthstatus == HealthStatus::Recovering).cloned().collect()
+    }
+}
+
+// A function to retrieve all the animals whose Heals status is Healthy
+#[ic_cdk_macros::query]
+fn get_healthy_animals() -> Vec<Livestock> {
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.animal.values().filter(|animal| animal.healthstatus == HealthStatus::Healthy).cloned().collect()
+    }
+}
+
+
+// Event logging function to track all changes made to the system like animal creation, deletion, updating etc.
 
 // Delete function to delete the animal by ID
 #[ic_cdk_macros::update]
@@ -318,7 +400,15 @@ fn delete_animal(id: u64) -> bool {
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
         match system.animal.remove(&(id as u32)) {
-            Some(_) => {
+            Some(animal) => {
+                ic_cdk::println!("Animal deleted: {:?}", animal);
+                system.event_logs.push(EventLog {
+                    event_type: "Animal Deleted".to_string(),
+                    details: format!("Animal with ID: {} deleted.", id),
+                    timestamp: time(),
+                });
+
+                system.animal.remove(&(id as u32));
                 ic_cdk::println!("Animal deleted with ID: {}", id);
                 true
             }

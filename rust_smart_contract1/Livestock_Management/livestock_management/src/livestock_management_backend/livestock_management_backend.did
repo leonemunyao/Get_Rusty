@@ -11,6 +11,12 @@ type Livestock = record {
   created_at : nat64;
 };
 
+type EventLog = record {
+  event_type : text;
+  details : text;
+  timestamp : nat64;
+}
+
 type HealthAlert = record {
   animal_id : nat64;
   status : HealthStatus;
@@ -47,4 +53,10 @@ service : () -> {
   update_health_status : (nat64, HealthStatus) -> (bool);
   breed_animals : (nat64, nat64, text) -> (opt nat64);
   get_pedigree : (nat64) -> (vec Livestock) query;
+  get_all_animals : () -> (vec Livestock) query;
+  get_critical_animals : () -> (vec Livestock) query;
+  get_sick_animals : () -> (vec Livestock) query;
+  get_recovering_animals : () -> (vec Livestock) query;
+  get_healthy_animals : () -> (vec Livestock) query;
+  get_event_logs : () -> (vec EventLog) query;
 }
