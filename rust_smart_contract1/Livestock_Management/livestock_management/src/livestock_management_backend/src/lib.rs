@@ -32,7 +32,7 @@ struct Medication {
 }
 
 // Health alert struct
-#[derive(candid::CandidType, Clone, Serialize, Deserialize)]
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Debug)]
 struct HealthAlert {
     animal_id: u64,
     status: HealthStatus,
@@ -47,6 +47,7 @@ enum HealthStatus {
     Healthy,
     Sick,
     Critical,
+    Recovering,
 }
 
 
@@ -170,11 +171,17 @@ fn update_animal(id: u64, age: u8, breed: String, height: f32, healthrecords: St
 // Function to update the animal health status
 #[ic_cdk_macros::update]
 fn update_health_status(id: u64, new_status: HealthStatus) -> bool {
+
+    ic_cdk::println!("Updating health status of animal with ID: {} to {:?}", id, new_status);
     unsafe {
         let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
         if let Some(animal) = system.animal.get_mut(&(id as u32)) {
             animal.healthstatus = new_status;
-            if matches!(new_status, HealthStatus::Critical | HealthStatus::Sick) {
+            animal.healthrecords = format!("{:?}", new_status);
+            animal.updated_at = Some(time());
+
+            // Check if the new status is Critical or Sick and create an alert
+            if matches!(new_status, HealthStatus::Critical | HealthStatus::Sick | HealthStatus::Recovering) {
                 let alert = HealthAlert {
                     animal_id: id,
                     status: new_status,
@@ -185,9 +192,24 @@ fn update_health_status(id: u64, new_status: HealthStatus) -> bool {
             }
             true
         } else {
+            ic_cdk::println!("No animal found with ID: {}", id);
             false
         }
     }
+}
+
+
+// ToString implementation for HealthStatus
+impl ToString for HealthStatus {
+    fn to_string(&self) -> String {
+        match self {
+            HealthStatus::Healthy => "Healthy".to_string(),
+            HealthStatus::Sick => "Sick".to_string(),
+            HealthStatus::Critical => "Critical".to_string(),
+            HealthStatus::Recovering => "Recovering".to_string(),
+        }
+    }
+    
 }
 
 
