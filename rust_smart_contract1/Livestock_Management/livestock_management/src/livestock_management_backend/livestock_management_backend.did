@@ -15,7 +15,7 @@ type EventLog = record {
   event_type : text;
   details : text;
   timestamp : nat64;
-}
+};
 
 type HealthAlert = record {
   animal_id : nat64;

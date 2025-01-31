@@ -390,6 +390,16 @@ fn get_healthy_animals() -> Vec<Livestock> {
     }
 }
 
+// Query function to get all the event logs
+#[ic_cdk_macros::query]
+fn get_event_logs() -> Vec<EventLog> {
+    ic_cdk::println!("Getting all event logs...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.event_logs.clone()
+    }
+}
+
 
 // Event logging function to track all changes made to the system like animal creation, deletion, updating etc.
 
