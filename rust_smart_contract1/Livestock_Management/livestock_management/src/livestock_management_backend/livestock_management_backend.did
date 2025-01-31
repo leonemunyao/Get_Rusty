@@ -6,6 +6,7 @@ type Livestock = record {
   healthrecords : text;
   healthstatus: HealthStatus;
   medical_records : vec Medication;
+  parent_ids : opt ParentIds;
   updated_at : opt nat64;
   created_at : nat64;
 };
@@ -31,6 +32,11 @@ type Medication = record {
   end_date : nat64;
 };
 
+type ParentIds = record {
+  parent1_id : nat64;
+  parent2_id : nat64;
+};
+
 service : () -> {
   create_animal : (nat8, text, float32) -> (nat64);
   delete_animal : (nat64) -> (bool);
@@ -39,4 +45,6 @@ service : () -> {
   track_medication : (nat64, text, text) -> (bool);
   get_health_alerts : () -> (vec HealthAlert) query;
   update_health_status : (nat64, HealthStatus) -> (bool);
+  breed_animals : (nat64, nat64, text) -> (opt nat64);
+  get_pedigree : (nat64) -> (vec Livestock) query;
 }

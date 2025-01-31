@@ -17,6 +17,7 @@ struct Livestock {
     healthrecords: String,
     healthstatus: HealthStatus,
     medical_records: Vec<Medication>,
+    parent_ids: Option<ParentIds>,
     created_at: u64,
     updated_at: Option<u64>,
 }
@@ -29,6 +30,13 @@ struct Medication {
     dosage: String,
     start_date: u64,
     end_date: u64,
+}
+
+// Parent IDs struct of the animal
+#[derive(candid::CandidType, Clone, Serialize, Deserialize, Debug)]
+struct ParentIds {
+    parent1_id: u64,
+    parent2_id: u64,
 }
 
 // Health alert struct
@@ -82,6 +90,7 @@ impl LivestockManagementSystem {
             healthrecords: "Healthy".to_string(),
             healthstatus: HealthStatus::Healthy,
             medical_records: Vec::new(),
+            parent_ids: None,
             created_at: current_time,
             updated_at: None,
         };
@@ -95,11 +104,46 @@ impl LivestockManagementSystem {
         // Return the ID of the new animal for reference
         self.next_id - 1
     }
+
+    // Bread animal function
+    fn breed_animals(&mut self, parent1_id: u64, parent2_id: u64, breed: String) -> Option<u64> {
+
+        // check if both parents exist
+        if self.animal.contains_key(&(parent1_id as u32)) && self.animal.contains_key(&(parent2_id as u32)) {
+
+            // Create a new offspring
+            let offspring_id = self.create_animal(0, breed, 0.0);
+
+            // Set the parents IDs of the offspring
+            if let Some(offspring) = self.animal.get_mut(&(offspring_id as u32)) {
+                offspring.parent_ids = Some(ParentIds {
+                    parent1_id,
+                    parent2_id,
+                });
+            }
+
+            Some(offspring_id)
+        } else {
+            None
+        }
+    }
+
+    // Get Peddigree function
+    fn get_pedigree(&self, id: u64) -> Vec<Livestock> {
+        let mut pedigree = Vec::new();
+        if let Some(animal) = self.animal.get(&(id as u32)) {
+            pedigree.push(animal.clone());
+            if let Some(parents) = &animal.parent_ids {
+                pedigree.append(&mut self.get_pedigree(parents.parent1_id));
+                pedigree.append(&mut self.get_pedigree(parents.parent2_id));
+            }
+        }
+        pedigree
+    }
 }
 
 // Creating a mutable static instance of LivestockManagementSystem
 static mut LIVECTOCK_SYSTEM: Option<LivestockManagementSystem> = None;
-
 
 // Initialize the canister state
 #[ic_cdk_macros::init]
@@ -120,6 +164,26 @@ fn create_animal(age: u8, breed: String, height: f32) -> u64 {
         let id = system.create_animal(age, breed, height);
         ic_cdk::println!("Animal created with ID: {}", id); 
         id
+    }
+}
+
+// Breed function to create a new animal by breeding two existing animals
+#[ic_cdk_macros::update]
+fn breed_animals(parent1_id: u64, parent2_id: u64, breed: String) -> Option<u64> {
+    ic_cdk::println!("Breeding animals with parent IDs: {} and {} to create a new animal with breed: {}", parent1_id, parent2_id, breed);
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_mut().expect("System not Initialized.");
+        system.breed_animals(parent1_id, parent2_id, breed)
+    }
+}
+
+// Get Pedigree function to get the pedigree of an animal by ID
+#[ic_cdk_macros::query]
+fn get_pedigree(id: u64) -> Vec<Livestock> {
+    ic_cdk::println!("Getting pedigree of animal with ID: {}", id);
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_pedigree(id)
     }
 }
 
@@ -244,6 +308,8 @@ fn track_medication(animal_id: u64, medication_name: String, dosage: String) -> 
         }
     }
 }
+
+//
 
 // Delete function to delete the animal by ID
 #[ic_cdk_macros::update]
