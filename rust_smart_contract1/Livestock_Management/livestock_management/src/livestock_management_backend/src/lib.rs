@@ -126,7 +126,7 @@ impl LivestockManagementSystem {
         self.next_id - 1
     }
 
-    // Bread animal function
+    // Breed animal function
     fn breed_animals(&mut self, parent1_id: u64, parent2_id: u64, breed: String) -> Option<u64> {
 
         // check if both parents exist
