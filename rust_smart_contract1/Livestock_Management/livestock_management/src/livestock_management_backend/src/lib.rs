@@ -59,6 +59,8 @@ struct EventLog {
 #[derive(candid::CandidType, Clone, Serialize, Deserialize, Copy, Default)]
 #[derive(Debug)]
 #[derive(PartialEq)]
+#[derive(Hash)]
+#[derive(Eq)]
 enum HealthStatus {
     #[default]  // Default status is Healthy
     Healthy,
@@ -167,6 +169,75 @@ impl LivestockManagementSystem {
         }
         pedigree
     }
+
+
+    // function to get the total number of animals
+    fn get_total_animals(&self) -> u64 {
+        self.animal.len() as u64
+    }
+
+    // function to get the average age of all the animals
+    fn get_average_age(&self) -> f32 {
+        let total_animals = self.get_total_animals();
+        let total_age: u64 = self.animal.values().map(|animal| animal.age as u64).sum();
+        if total_animals > 0 {
+            total_age as f32 / total_animals as f32
+        } else {
+            0.0
+        }
+    }
+
+    // function to get the average height of all the animals
+    fn get_average_height(&self) -> f32 {
+        let total_animals = self.get_total_animals();
+        ic_cdk::println!("Total animals: {}", total_animals);
+
+        if total_animals == 0 {
+            return 0.0;
+        }
+
+        let mut total_height = 0.0;
+        let mut valid_heights = 0;
+
+        for animal in self.animal.values() {
+            if !animal.height.is_nan() && animal.height > 0.0 {
+                total_height += animal.height;
+                valid_heights += 1;
+                ic_cdk::println!("Added height: {} for animal ID: {}", animal.height, animal.id);
+            }
+        }
+
+        ic_cdk::println!("Total height: {}, Valid measurement: {}", total_height, valid_heights);
+
+        if valid_heights > 0 {
+            let average = total_height / valid_heights as f32;
+            ic_cdk::println!("Average height: {}", average);
+            average
+        } else {
+            ic_cdk::println!("No valid height found.");
+            0.0
+        }
+    }
+
+    // function to get the health status statistics of all the animals
+    fn get_health_status_statistics(&self) -> HashMap<HealthStatus, u64> {
+        let mut statistics = HashMap::new();
+        for animal in self.animal.values() {
+            *statistics.entry(animal.healthstatus).or_insert(0) += 1;
+        }
+        statistics
+    }
+
+    // function to get the number of animals per breed
+    fn get_animals_per_breed(&self) -> HashMap<String, u64> {
+        let mut breed_count = HashMap::new();
+        for animal in self.animal.values() {
+            *breed_count.entry(animal.breed.clone()).or_insert(0) += 1;
+        }
+        breed_count
+    }
+
+
 }
 
 // Creating a mutable static instance of LivestockManagementSystem
@@ -354,7 +425,7 @@ fn track_medication(animal_id: u64, medication_name: String, dosage: String) -> 
     }
 }
 
-// A function to retrieve all the animals whose Heals status is Critical
+// A function to retrieve all the animals whose Health status is Critical
 #[ic_cdk_macros::query]
 fn get_critical_animals() -> Vec<Livestock> {
     unsafe {
@@ -363,7 +434,7 @@ fn get_critical_animals() -> Vec<Livestock> {
     }
 }
 
-// A function to retrieve all the animals whose Heals status is Sick
+// A function to retrieve all the animals whose Health status is Sick
 #[ic_cdk_macros::query]
 fn get_sick_animals() -> Vec<Livestock> {
     unsafe {
@@ -372,7 +443,7 @@ fn get_sick_animals() -> Vec<Livestock> {
     }
 }
 
-// A function to retrieve all the animals whose Heals status is Recovering
+// A function to retrieve all the animals whose Health status is Recovering
 #[ic_cdk_macros::query]
 fn get_recovering_animals() -> Vec<Livestock> {
     unsafe {
@@ -381,7 +452,7 @@ fn get_recovering_animals() -> Vec<Livestock> {
     }
 }
 
-// A function to retrieve all the animals whose Heals status is Healthy
+// A function to retrieve all the animals whose Health status is Healthy
 #[ic_cdk_macros::query]
 fn get_healthy_animals() -> Vec<Livestock> {
     unsafe {
@@ -401,7 +472,55 @@ fn get_event_logs() -> Vec<EventLog> {
 }
 
 
-// Event logging function to track all changes made to the system like animal creation, deletion, updating etc.
+// Get total number of animals query
+#[ic_cdk_macros::query]
+fn get_total_animals() -> u64 {
+    ic_cdk::println!("Getting total number of animals...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_total_animals()
+    }
+}
+
+// Get average age of all the animals query
+#[ic_cdk_macros::query]
+fn get_average_age() -> f32 {
+    ic_cdk::println!("Getting average age of all the animals...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_average_age()
+    }
+}
+
+// Get average height of all the animals query
+#[ic_cdk_macros::query]
+fn get_average_height() -> f32 {
+    ic_cdk::println!("Getting average height of all the animals...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_average_height()
+    }
+}
+
+// Get number of animals per breed query
+#[ic_cdk_macros::query]
+fn get_animals_per_breed() -> HashMap<String, u64> {
+    ic_cdk::println!("Getting number of animals per breed...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_animals_per_breed()
+    }
+}
+
+// Get health status statistics of all the animals query
+#[ic_cdk_macros::query]
+fn get_health_status_statistics() -> HashMap<HealthStatus, u64> {
+    ic_cdk::println!("Getting health status statistics of all the animals...");
+    unsafe {
+        let system = LIVECTOCK_SYSTEM.as_ref().expect("System not Initialized.");
+        system.get_health_status_statistics()
+    }
+}
 
 // Delete function to delete the animal by ID
 #[ic_cdk_macros::update]

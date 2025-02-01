@@ -59,4 +59,10 @@ service : () -> {
   get_recovering_animals : () -> (vec Livestock) query;
   get_healthy_animals : () -> (vec Livestock) query;
   get_event_logs : () -> (vec EventLog) query;
+  get_total_animals : () -> (nat64) query;
+  get_average_age : () -> (float32) query;
+  get_average_height : () -> (float32) query;
+  get_animals_per_breed : () -> (vec record { text; nat64 }) query;
+  get_health_status_statistics : () -> (vec record {HealthStatus; nat64 }) query;
 }
+
