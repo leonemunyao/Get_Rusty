@@ -75,6 +75,7 @@ In this system we are assuming a farmer has only bulls and cows to test its func
   * `get_health_status_statistics`: Retrieves health status statistics of all the animals.
 
 
+### Getting started to run the project
 
 * rustc 1.64 or higher
 ```bash
@@ -96,15 +97,6 @@ $ echo 'export PATH="$PATH:$HOME/bin"' >> "$HOME/.bashrc"
 $ source ~/.bashrc
 $ dfx start --background
 ```
-
-If you want to start working on your project right away, you might want to try the following commands:
-
-```bash
-$ cd icp_rust_boilerplate/
-$ dfx help
-$ dfx canister --help
-```
-
 
 
 
