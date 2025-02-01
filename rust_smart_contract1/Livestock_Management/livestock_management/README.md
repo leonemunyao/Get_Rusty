@@ -2,7 +2,7 @@
 
 ### Introduction
 
-This is a Rust Smart Contract for Livestock Management System which enables a farmerto manage his cattle farm with ease. This system has incorporated the basic CRUD operations. Through the system, a farmer records cattle breed, age =, height, healthrecords, update healthstatus and medical records.
+This is a Rust Smart Contract for Livestock Management System which enables a farmer to manage his cattle farm with ease. This system has incorporated the basic CRUD operations. Through the system, a farmer records cattle breed, age, height, health records, update health status and medical records.
 
 In this system we are assuming a farmer has only bulls and cows to test its functionality. The farmer can be having different breeds like `Brangus`, `Herefold`, `Friasian`, `Zebu` and many more. They use this system to track their different breeds and their specific details.
 
