@@ -22,7 +22,7 @@ struct Livestock {
     updated_at: Option<u64>,
 }
 
-// Vacination and medication trucking
+// Vacination and medication tracking
 #[derive(candid::CandidType, Clone, Serialize, Deserialize, Debug)]
 struct Medication {
     id: u64,
