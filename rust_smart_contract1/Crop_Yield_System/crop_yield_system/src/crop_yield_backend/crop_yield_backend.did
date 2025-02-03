@@ -3,6 +3,7 @@ type Crop = record {
   ph_level : float64;
   infection_monitoring : vec record { text; text };
   actual_yield : float64;
+  growth_stage : GrowthStage;
   weather_conditions : text;
   pest_and_disease_details : vec record { text; text };
   planting_date : text;
@@ -13,9 +14,17 @@ type Crop = record {
   crop_type : text;
   variety : text;
 };
+type GrowthStage = variant {
+  Germination;
+  Harvesting;
+  Ripening;
+  Fruiting;
+  Vegetative;
+  Planting;
+  Flowering;
+};
 service : {
   create_crop : (
-      nat64,
       text,
       text,
       text,
@@ -30,7 +39,9 @@ service : {
       float64,
     ) -> (Crop);
   delete_crop : (nat64) -> (opt Crop);
+  get_all_crops : () -> (vec Crop) query;
   get_crop_details : (nat64) -> (opt Crop) query;
+  get_growth_stage : (nat64) -> (opt GrowthStage) query;
   update_crop_details : (
       nat64,
       float64,
@@ -40,4 +51,5 @@ service : {
       float64,
       float64,
     ) -> (opt Crop);
+  update_growth_stage : (nat64, GrowthStage) -> (opt Crop);
 }

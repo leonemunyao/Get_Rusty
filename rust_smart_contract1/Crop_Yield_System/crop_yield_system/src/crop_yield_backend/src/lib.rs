@@ -1,5 +1,4 @@
 // Crop yield and harvest tracking system backend
-
 use serde::{Deserialize, Serialize};
 use candid::CandidType;
 use ic_cdk_macros::{update, query};
@@ -21,6 +20,19 @@ pub struct Crop {
     soil_quality: HashMap<String, String>,
     ph_level: f64,
     expected_rainfall: f64,
+    growth_stage: GrowthStage,
+}
+
+// Crop growth stage tracking struct
+#[derive(CandidType, Serialize, Deserialize, Debug, Clone)]
+pub enum GrowthStage {
+    Planting,
+    Germination,
+    Vegetative,
+    Flowering,
+    Fruiting,
+    Ripening,
+    Harvesting,
 }
 
 // Implement the Crop struct
@@ -39,6 +51,7 @@ impl Crop {
         soil_quality: HashMap<String, String>,
         ph_level: f64,
         expected_rainfall: f64,
+        growth_stage: GrowthStage,
     ) -> Self {
         Crop {
             id,
@@ -54,6 +67,7 @@ impl Crop {
             soil_quality,
             ph_level,
             expected_rainfall,
+            growth_stage,
         }
     }
 }
@@ -61,12 +75,12 @@ impl Crop {
 // Global variable to store the crop details
 thread_local! {
     static CROPS: RefCell<HashMap<u64, Crop>> = RefCell::new(HashMap::new());
+    static COUNTER: RefCell<u64> = RefCell::new(0);
 }
 
 // Create a new Crop instance
 #[update]
 pub fn create_crop(
-    id: u64,
     crop_type: String,
     variety: String,
     field_location: String,
@@ -80,6 +94,12 @@ pub fn create_crop(
     ph_level: f64,
     expected_rainfall: f64,
 ) -> Crop {
+
+    let id = COUNTER.with(|counter| {
+        let current = *counter.borrow();
+        *counter.borrow_mut() = current + 1;
+        current
+    });
     let crop = Crop::new(
         id,
         crop_type,
@@ -94,6 +114,7 @@ pub fn create_crop(
         soil_quality,
         ph_level,
         expected_rainfall,
+        GrowthStage::Planting,
     );
     CROPS.with(|crops|{
         crops.borrow_mut().insert(id, crop.clone());
@@ -106,6 +127,36 @@ pub fn create_crop(
 pub fn get_crop_details(id: u64) -> Option<Crop> {
     CROPS.with(|crops| {
         crops.borrow().get(&id).cloned()
+    })
+}
+
+// A function to update crop growth stage
+#[update]
+pub fn update_growth_stage(crop_id: u64, growth_stage: GrowthStage) -> Option<Crop> {
+    CROPS.with(|crops| {
+        let mut crops = crops.borrow_mut();
+        if let Some(crop) = crops.get_mut(&crop_id) {
+            crop.growth_stage = growth_stage;
+            Some(crop.clone())
+        } else {
+            None
+        }
+    })
+}
+
+// Query to get growth stage of a crop
+#[query]
+pub fn get_growth_stage(crop_id: u64) -> Option<GrowthStage> {
+    CROPS.with(|crops| {
+        crops.borrow().get(&crop_id).map(|crop| crop.growth_stage.clone())
+    })
+}
+
+// Get all the crop details function
+#[query]
+pub fn get_all_crops() -> Vec<Crop> {
+    CROPS.with(|crops| {
+        crops.borrow().values().cloned().collect()
     })
 }
 
