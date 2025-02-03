@@ -21,6 +21,16 @@ pub struct Crop {
     ph_level: f64,
     expected_rainfall: f64,
     growth_stage: GrowthStage,
+    ferterlizer_application: Vec<Application>,
+    pestcides_application: Vec<Application>,
+}
+
+// Pestcides and Ferterlizer Application tracking struct
+#[derive(CandidType, Serialize, Deserialize, Debug, Clone)]
+pub struct Application {
+    date: String,
+    product_name: String,
+    quantity: f64,
 }
 
 // Crop growth stage tracking struct
@@ -68,6 +78,8 @@ impl Crop {
             ph_level,
             expected_rainfall,
             growth_stage,
+            ferterlizer_application: Vec::new(),
+            pestcides_application: Vec::new(),
         }
     }
 }
@@ -159,6 +171,54 @@ pub fn get_all_crops() -> Vec<Crop> {
         crops.borrow().values().cloned().collect()
     })
 }
+
+
+// Ferterlizer application and tracking function
+#[update]
+pub fn log_ferterlizer_application(crop_id: u64, application: Application) -> Option<Crop> {
+    CROPS.with(|crops| {
+        let mut crops = crops.borrow_mut();
+        if let Some(crop) = crops.get_mut(&crop_id) {
+            crop.ferterlizer_application.push(application);
+            Some(crop.clone())
+        } else {
+            None
+        }
+    })
+}
+
+
+// Query to get the ferterlizer application details
+#[query]
+pub fn get_ferterlizer_application(crop_id: u64) -> Option<Vec<Application>> {
+    CROPS.with(|crops| {
+        crops.borrow().get(&crop_id).map(|crop| crop.ferterlizer_application.clone())
+    })
+}
+
+
+// A function for logging pestcides application
+#[update]
+pub fn log_pestcides_application(crop_id: u64, application: Application) -> Option<Crop> {
+    CROPS.with(|crops| {
+        let mut crops = crops.borrow_mut();
+        if let Some(crop) = crops.get_mut(&crop_id) {
+            crop.pestcides_application.push(application);
+            Some(crop.clone())
+        } else {
+            None
+        }
+    })
+}
+
+// Query to get the pestcides application details
+#[query]
+pub fn get_pestcides_application(crop_id: u64) -> Option<Vec<Application>> {
+    CROPS.with(|crops| {
+        crops.borrow().get(&crop_id).map(|crop| crop.pestcides_application.clone())
+    })
+}
+
 
 // Update the crop details
 #[update]

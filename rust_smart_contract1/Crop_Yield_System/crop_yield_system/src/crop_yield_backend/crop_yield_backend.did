@@ -1,5 +1,11 @@
+type Application = record {
+  date : text;
+  product_name : text;
+  quantity : float64;
+};
 type Crop = record {
   id : nat64;
+  ferterlizer_application : vec Application;
   ph_level : float64;
   infection_monitoring : vec record { text; text };
   actual_yield : float64;
@@ -13,6 +19,7 @@ type Crop = record {
   expected_rainfall : float64;
   crop_type : text;
   variety : text;
+  pestcides_application : vec Application;
 };
 type GrowthStage = variant {
   Germination;
@@ -41,7 +48,11 @@ service : {
   delete_crop : (nat64) -> (opt Crop);
   get_all_crops : () -> (vec Crop) query;
   get_crop_details : (nat64) -> (opt Crop) query;
+  get_ferterlizer_application : (nat64) -> (opt vec Application) query;
   get_growth_stage : (nat64) -> (opt GrowthStage) query;
+  get_pestcides_application : (nat64) -> (opt vec Application) query;
+  log_ferterlizer_application : (nat64, Application) -> (opt Crop);
+  log_pestcides_application : (nat64, Application) -> (opt Crop);
   update_crop_details : (
       nat64,
       float64,
