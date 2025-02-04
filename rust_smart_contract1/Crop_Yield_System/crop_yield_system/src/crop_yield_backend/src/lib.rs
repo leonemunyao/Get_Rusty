@@ -12,7 +12,7 @@ pub struct Crop {
     variety: String,
     field_location: String,
     planting_date: String,
-    weather_conditions: String,
+    weather_conditions: WeatherConditions,
     expected_yield: f64,
     actual_yield: f64,
     infection_monitoring: HashMap<String, String>,
@@ -21,11 +21,11 @@ pub struct Crop {
     ph_level: f64,
     expected_rainfall: f64,
     growth_stage: GrowthStage,
-    ferterlizer_application: Vec<Application>,
-    pestcides_application: Vec<Application>,
+    fertilizer_application: Vec<Application>,
+    pesticides_application: Vec<Application>,
 }
 
-// Pestcides and Ferterlizer Application tracking struct
+// Pesticides and Fertilizer Application tracking struct
 #[derive(CandidType, Serialize, Deserialize, Debug, Clone)]
 pub struct Application {
     date: String,
@@ -45,6 +45,15 @@ pub enum GrowthStage {
     Harvesting,
 }
 
+// Weather conditions struct
+#[derive(CandidType, Serialize, Deserialize, Debug, Clone)]
+pub struct WeatherConditions {
+    conditions: String,
+    rainfall: f64,
+    temperature: f64,
+}
+
+
 // Implement the Crop struct
 impl Crop {
     pub fn new(
@@ -53,7 +62,7 @@ impl Crop {
         variety: String,
         field_location: String,
         planting_date: String,
-        weather_conditions: String,
+        weather_conditions: WeatherConditions,
         expected_yield: f64,
         actual_yield: f64,
         infection_monitoring: HashMap<String, String>,
@@ -78,8 +87,8 @@ impl Crop {
             ph_level,
             expected_rainfall,
             growth_stage,
-            ferterlizer_application: Vec::new(),
-            pestcides_application: Vec::new(),
+            fertilizer_application: Vec::new(),
+            pesticides_application: Vec::new(),
         }
     }
 }
@@ -97,7 +106,7 @@ pub fn create_crop(
     variety: String,
     field_location: String,
     planting_date: String,
-    weather_conditions: String,
+    weather_conditions: WeatherConditions,  
     expected_yield: f64,
     actual_yield: f64,
     infection_monitoring: HashMap<String, String>,
@@ -173,13 +182,13 @@ pub fn get_all_crops() -> Vec<Crop> {
 }
 
 
-// Ferterlizer application and tracking function
+// Fertilizer application and tracking function
 #[update]
-pub fn log_ferterlizer_application(crop_id: u64, application: Application) -> Option<Crop> {
+pub fn log_fertilizer_application(crop_id: u64, application: Application) -> Option<Crop> {
     CROPS.with(|crops| {
         let mut crops = crops.borrow_mut();
         if let Some(crop) = crops.get_mut(&crop_id) {
-            crop.ferterlizer_application.push(application);
+            crop.fertilizer_application.push(application);
             Some(crop.clone())
         } else {
             None
@@ -188,22 +197,22 @@ pub fn log_ferterlizer_application(crop_id: u64, application: Application) -> Op
 }
 
 
-// Query to get the ferterlizer application details
+// Query to get the fertilizer application details
 #[query]
-pub fn get_ferterlizer_application(crop_id: u64) -> Option<Vec<Application>> {
+pub fn get_fertilizer_application(crop_id: u64) -> Option<Vec<Application>> {
     CROPS.with(|crops| {
-        crops.borrow().get(&crop_id).map(|crop| crop.ferterlizer_application.clone())
+        crops.borrow().get(&crop_id).map(|crop| crop.fertilizer_application.clone())
     })
 }
 
 
-// A function for logging pestcides application
+// A function for logging pesticides application
 #[update]
-pub fn log_pestcides_application(crop_id: u64, application: Application) -> Option<Crop> {
+pub fn log_pesticides_application(crop_id: u64, application: Application) -> Option<Crop> {
     CROPS.with(|crops| {
         let mut crops = crops.borrow_mut();
         if let Some(crop) = crops.get_mut(&crop_id) {
-            crop.pestcides_application.push(application);
+            crop.pesticides_application.push(application);
             Some(crop.clone())
         } else {
             None
@@ -211,11 +220,56 @@ pub fn log_pestcides_application(crop_id: u64, application: Application) -> Opti
     })
 }
 
-// Query to get the pestcides application details
+// Query to get the pesticides application details
 #[query]
-pub fn get_pestcides_application(crop_id: u64) -> Option<Vec<Application>> {
+pub fn get_pesticides_application(crop_id: u64) -> Option<Vec<Application>> {
     CROPS.with(|crops| {
-        crops.borrow().get(&crop_id).map(|crop| crop.pestcides_application.clone())
+        crops.borrow().get(&crop_id).map(|crop| crop.pesticides_application.clone())
+    })
+}
+
+
+// Yiel Prediction model to predict yield based on weather
+#[query]
+pub fn predict_yield(crop_id: u64) -> Option<f64> {
+    CROPS.with(|crops| {
+        crops.borrow().get(&crop_id).map(|crop| {
+            // Base yield (expected yield)
+            let base_yield = crop.expected_yield;
+
+            // Weather factor (e.g., rainfall impact)
+            let weather_factor = if crop.weather_conditions.rainfall > 100.0 { 
+                1.2 // More rainfall increases yield
+            } else {
+                1.0 }
+            ;
+
+            // Soil factor (e.g., pH level impact)
+            let soil_factor = if crop.ph_level >= 6.0 && crop.ph_level <= 7.0 {
+                1.1 // Optimal pH range
+            } else {
+                0.9 // Suboptimal pH range
+            };
+
+            // Fertilizer factor (e.g., total fertilizer used)
+            let total_fertilizer: f64 = crop.fertilizer_application.iter().map(|app| app.quantity).sum();
+            let fertilizer_factor = if total_fertilizer > 0.0 {
+                1.0 + (total_fertilizer * 0.01) // Example: Fertilizer increases yield
+            } else {
+                1.0
+            };
+
+            // Pesticide factor (e.g., total pesticide used)
+            let total_pesticide: f64 = crop.pesticides_application.iter().map(|app| app.quantity).sum();
+            let pesticide_factor = if total_pesticide > 0.0 {
+                1.0 - (total_pesticide * 0.005) // Example: Pesticide reduces yield slightly
+            } else {
+                1.0
+            };
+
+            // Final predicted yield
+            base_yield * weather_factor * soil_factor * fertilizer_factor * pesticide_factor
+        })
     })
 }
 
