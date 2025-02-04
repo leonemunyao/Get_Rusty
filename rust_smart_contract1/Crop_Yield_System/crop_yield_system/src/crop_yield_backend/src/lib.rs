@@ -254,7 +254,7 @@ pub fn predict_yield(crop_id: u64) -> Option<f64> {
             // Fertilizer factor (e.g., total fertilizer used)
             let total_fertilizer: f64 = crop.fertilizer_application.iter().map(|app| app.quantity).sum();
             let fertilizer_factor = if total_fertilizer > 0.0 {
-                1.0 + (total_fertilizer * 0.01) // Example: Fertilizer increases yield
+                1.0 + (total_fertilizer * 0.01) // Fertilizer increases yield
             } else {
                 1.0
             };
@@ -262,7 +262,7 @@ pub fn predict_yield(crop_id: u64) -> Option<f64> {
             // Pesticide factor (e.g., total pesticide used)
             let total_pesticide: f64 = crop.pesticides_application.iter().map(|app| app.quantity).sum();
             let pesticide_factor = if total_pesticide > 0.0 {
-                1.0 - (total_pesticide * 0.005) // Example: Pesticide reduces yield slightly
+                1.0 - (total_pesticide * 0.005) // Pesticide reduces yield slightly
             } else {
                 1.0
             };
